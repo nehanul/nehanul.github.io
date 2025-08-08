@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Trading Profit & Position Calculator</title>
+<style>
+  :root {
+    --bg: #f6f9fc;
+    --card: #ffffff;
+    --accent: #1e73c6;
+    --accent-2: #18a974;
+    --muted: #6b7b8a;
+    --danger: #d9534f;
+    --gold: #cc7a00;
+    --text-color: #233;
+    --border-color: #e0e6ef;
+    --input-bg: #fff;
+    --result-bg: #fbfdff;
+    --result-border: #e6f0fb;
+    --shadow: 0 6px 18px rgba(28, 45, 62, 0.08);
+    --btn-secondary-bg: #f0f5fb;
+    --btn-secondary-border: rgba(30, 115, 198, 0.08);
+  }
+
+  [data-theme="dark"] {
+    --bg: #1a1a1a;
+    --card: #252525;
+    --accent: #3b82f6;
+    --accent-2: #22c55e;
+    --muted: #888888;
+    --danger: #ef4444;
+    --gold: #f59e0b;
+    --text-color: #f1f1f1;
+    --border-color: #3a3a3a;
+    --input-bg: #303030;
+    --result-bg: #2a2a2a;
+    --result-border: #333;
+    --shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+    --btn-secondary-bg: #3a3a3a;
+    --btn-secondary-border: rgba(59, 130, 246, 0.2);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text-color);
+    padding: 24px;
+    -webkit-font-smoothing: antialiased;
+    transition: background 0.2s, color 0.2s;
+  }
+  .app { max-width: 1000px; margin: 0 auto; }
+  header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 18px; flex-wrap: wrap; }
+  header h1 { margin: 0; font-size: 20px; color: var(--accent); }
+  header p { margin: 0; color: var(--muted); font-size: 13px; }
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+  .card {
+    background: var(--card); border-radius: 12px; padding: 18px;
+    box-shadow: var(--shadow); border: 1px solid var(--border-color);
+    transition: background 0.2s, border-color 0.2s;
+  }
+  .row { display: flex; gap: 12px; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }
+  label { font-size: 13px; color: var(--muted); min-width: 120px; flex-shrink: 0; }
+  input[type="number"], input[type="text"] {
+    padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border-color);
+    background: var(--input-bg); font-size: 14px; color: var(--text-color);
+    flex: 1; min-width: 100px; transition: background 0.2s, border-color 0.2s, color 0.2s;
+  }
+  input:focus-visible { outline: 2px solid var(--accent); border-color: transparent; }
+  .small { max-width: 130px; }
+  .btn {
+    background: var(--accent); color: white; border: none; padding: 10px 14px;
+    border-radius: 8px; cursor: pointer; font-weight: 600; transition: background 0.2s;
+  }
+  .btn:hover { opacity: 0.9; }
+  .btn.secondary { background: var(--btn-secondary-bg); color: var(--accent); border: 1px solid var(--btn-secondary-border); }
+  .result { margin-top: 12px; padding: 12px; background: var(--result-bg); border-radius: 8px; border: 1px solid var(--result-border); font-weight: 600; color: var(--text-color); transition: background 0.2s, border-color 0.2s; }
+  .result-row { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 6px; align-items: center; }
+  .muted { color: var(--muted); font-weight: 500; font-size: 13px; }
+  .green { color: var(--accent-2); } .red { color: var(--danger); } .gold { color: var(--gold); }
+  .mini { font-size: 12px; color: var(--muted); }
+  .badge { padding: 6px 10px; border-radius: 999px; font-size: 12px; background: var(--btn-secondary-bg); color: var(--accent-2); border: 1px solid var(--btn-secondary-border); }
+  footer { margin-top: 18px; color: var(--muted); font-size: 13px; text-align: center; }
+  .toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 1000; display: flex; flex-direction: column; gap: 10px; }
+  .toast { padding: 12px 18px; border-radius: 8px; color: white; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.2); opacity: 0; transform: translateY(20px); transition: opacity 0.3s, transform 0.3s; }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast-success { background: var(--accent-2); }
+  .toast-info { background: var(--accent); }
+  .toast-error { background: var(--danger); }
+  hr.divider { border: none; border-bottom: 1px solid var(--result-border); margin: 8px 0; }
+  .theme-toggle { cursor: pointer; font-size: 24px; background: none; border: none; padding: 0; line-height: 1; }
+  .action-buttons { display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; }
+
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+  @media (max-width: 480px) {
+    body { padding: 12px; }
+    header h1 { font-size: 18px; }
+    .row { flex-direction: column; align-items: flex-start; gap: 4px; }
+    label { min-width: unset; }
+    input[type="number"], input[type="text"] { width: 100%; }
+    .small { max-width: 100%; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div>
+      <h1>Trading Profit & Position Calculator</h1>
+      <p class="mini">Inputs persist in your browser • Calculations auto-update</p>
+    </div>
+    <div style="text-align:right; display:flex; align-items:center; gap:16px;">
+      <div class="badge">Universal (any asset)</div>
+      <button id="themeToggle" class="theme-toggle" title="Toggle Theme">🌓</button>
+    </div>
+  </header>
+
+  <div class="card" style="margin-bottom:14px;">
+    <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+      <label style="min-width:auto">Buy Fee (%)</label>
+      <input id="buyFeeInput" class="small" type="number" step="0.001" min="0" value="0.1">
+      <label style="min-width:auto; margin-left:12px;">Sell Fee (%)</label>
+      <input id="sellFeeInput" class="small" type="number" step="0.001" min="0" value="0.1">
+      <div style="margin-left:auto">
+        <button class="btn" onclick="saveAll(true)">Save Now</button>
+        <button class="btn secondary" onclick="resetAll()" style="margin-left:8px">Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2 style="margin:0 0 8px 0; color:var(--accent); font-size:16px">🎯 Buy & Target Sell</h2>
+      <div class="row"><label>Buy Price</label><input id="buyPrice" type="number" value="3702"></div>
+      <div class="row"><label>Buy Amount (USD)</label><input id="buyAmount" type="number" value="250"></div>
+      <div class="row"><label>Target Profit (%)</label><input id="targetPct" type="number" step="0.01" value="0.7"></div>
+      <div class="action-buttons">
+        <button class="btn" onclick="computeTarget()">Calculate</button>
+        <button class="btn secondary" onclick="autoFillPartial()">Use in Partial Sell</button>
+      </div>
+      <div id="targetResult" class="result" aria-live="polite"></div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin:0 0 8px 0; color:var(--accent); font-size:16px">📈 Running P/L</h2>
+      <div class="row"><label>Buy Price</label><input id="runBuyPrice" type="number" value="3702"></div>
+      <div class="row"><label>Investment (USD)</label><input id="runInvestment" type="number" value="250"></div>
+      <div class="row"><label>Current Price</label><input id="runCurrentPrice" type="number" value="3800"></div>
+      <div class="action-buttons">
+        <button class="btn" onclick="computeRunning()">Check P/L</button>
+        <button class="btn secondary" onclick="copyBreakEven()">Copy Break-Even</button>
+      </div>
+      <div id="runningResult" class="result" aria-live="polite"></div>
+    </div>
+
+    <div class="card" style="grid-column: span 2;">
+      <h2 style="margin:0 0 8px 0; color:var(--accent); font-size:16px">✂️ Partial Sell & Position Tracker</h2>
+      <div style="display:flex; gap:18px; flex-wrap:wrap;">
+        <div style="flex:1; min-width:220px;">
+          <div class="row"><label>Total Buy Price</label><input id="ps_buyPrice" type="number"></div>
+          <div class="row"><label>Total Investment (USD)</label><input id="ps_buyAmount" type="number"></div>
+          <div class="row"><label>Total Units (auto)</label><input id="ps_totalUnits" type="number" readonly style="background:var(--result-bg)"></div>
+        </div>
+        <div style="flex:1; min-width:220px;">
+          <div class="row"><label>Sell Amount (USD)</label><input id="ps_sellAmount" type="number" value="50"></div>
+          <div class="row"><label>Sell Price</label><input id="ps_sellPrice" type="number" value="3859"></div>
+          <div class="row"><label>Market Price (for remaining)</label><input id="ps_marketPrice" type="number" value="3800"></div>
+        </div>
+      </div>
+      <div class="action-buttons">
+        <button class="btn" onclick="computePartial()">Calculate Partial</button>
+      </div>
+      <div id="partialResult" class="result" aria-live="polite"></div>
+    </div>
+  </div>
+
+  <footer>Tip: Change fee percentages at the top to quickly simulate different exchange costs.</footer>
+</div>
+<div id="toastContainer" class="toast-container"></div>
+
+<script>
+/* ===== UTILITIES & SETUP ===== */
+function $(id) { return document.getElementById(id); }
+function number(v) { return (v === "" || v === null || v === undefined) ? NaN : Number(v); }
+function fmt(n, d = 2) { if (!isFinite(n)) return '-'; return Number(n).toLocaleString(undefined, { minimumFractionDigits: d, maximumFractionDigits: d }); }
+
+const toastContainer = $('toastContainer');
+function showToast(message, type = 'info', duration = 3000) {
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.textContent = message;
+    toastContainer.appendChild(toast);
+    setTimeout(() => { toast.classList.add('show'); }, 10);
+    setTimeout(() => {
+        toast.classList.remove('show');
+        toast.addEventListener('transitionend', () => toast.remove());
+    }, duration);
+}
+
+/* ===== THEME HANDLING ===== */
+const themeToggle = $('themeToggle');
+const currentTheme = localStorage.getItem('theme');
+if (currentTheme) {
+    document.documentElement.setAttribute('data-theme', currentTheme);
+    themeToggle.textContent = currentTheme === 'dark' ? '☀️' : '🌓';
+}
+themeToggle.addEventListener('click', () => {
+    let theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+    themeToggle.textContent = theme === 'dark' ? '☀️' : '🌓';
+});
+
+/* ===== LOCALSTORAGE (PERSISTENCE) ===== */
+const keys = [
+    'buyFeeInput', 'sellFeeInput',
+    'buyPrice', 'buyAmount', 'targetPct',
+    'runBuyPrice', 'runInvestment', 'runCurrentPrice',
+    'ps_buyPrice', 'ps_buyAmount', 'ps_sellAmount', 'ps_sellPrice', 'ps_marketPrice'
+];
+function saveAll(showNotification = false) {
+    keys.forEach(k => {
+        const el = $(k);
+        if (el) localStorage.setItem('tc_' + k, el.value);
+    });
+    if (showNotification) showToast('Inputs saved!', 'success');
+}
+function loadAll() {
+    keys.forEach(k => {
+        const el = $(k);
+        const storedValue = localStorage.getItem('tc_' + k);
+        if (el && storedValue !== null) {
+            el.value = storedValue;
+        }
+    });
+}
+function resetAll() {
+    if (!confirm('Reset all inputs to their defaults?')) return;
+    localStorage.clear();
+    location.reload();
+}
+
+/* ===== AUTO-CALCULATION ON INPUT ===== */
+document.querySelectorAll('input').forEach(inp => {
+    inp.addEventListener('input', () => {
+        saveAll();
+        runAllCalculations();
+    });
+});
+
+function runAllCalculations() {
+    try {
+        computeAndFillTotalUnits(); // This also syncs inputs between sections
+        computeTarget();
+        computeRunning();
+        computePartial();
+    } catch (e) {
+        console.error("Calculation error:", e);
+    }
+}
+
+/* ===== CORE MATH HELPERS ===== */
+function buyFeeDecimal() { return (number($('buyFeeInput').value) || 0) / 100; }
+function sellFeeDecimal() { return (number($('sellFeeInput').value) || 0) / 100; }
+
+function computeUnitsBought(buyAmount, buyPrice, fee) {
+    return (buyAmount * (1 - fee)) / buyPrice;
+}
+function costBasisPerUnit(totalInvested, unitsBought) {
+    return totalInvested / unitsBought;
+}
+function calculateBreakEven(buyPrice, buyFee, sellFee) {
+    return buyPrice / ((1 - buyFee) * (1 - sellFee));
+}
+
+/* ===== SECTION 1: BUY & TARGET ===== */
+function computeTarget() {
+    const buyFee = buyFeeDecimal();
+    const sellFee = sellFeeDecimal();
+    const Pbuy = number($('buyPrice').value);
+    const A = number($('buyAmount').value);
+    const targetPct = (number($('targetPct').value) || 0) / 100;
+
+    if (!isFinite(Pbuy) || !isFinite(A) || Pbuy <= 0) {
+        $('targetResult').innerHTML = `<div class="muted">Enter Buy Price and Amount.</div>`;
+        return;
+    }
+
+    const units = computeUnitsBought(A, Pbuy, buyFee);
+    const buyFeeCost = A * buyFee;
+    const breakEven = calculateBreakEven(Pbuy, buyFee, sellFee);
+    const targetSell = breakEven * (1 + targetPct);
+    const grossSellAtTarget = units * targetSell;
+    const sellFeeTarget = grossSellAtTarget * sellFee;
+    const netProceedsAtTarget = grossSellAtTarget * (1 - sellFee);
+    const netProfit = netProceedsAtTarget - A;
+
+    const html = `
+    <div class="result-row"><div class="muted">Units Bought</div><div>${fmt(units, 6)}</div></div>
+    <div class="result-row"><div class="muted">Break-Even Price</div><div class="gold">$${fmt(breakEven, 4)}</div></div>
+    <hr class="divider">
+    <div class="result-row"><div class="muted">Target Sell Price for ${(targetPct * 100).toFixed(2)}%</div><div class="green">$${fmt(targetSell, 4)}</div></div>
+    <div class="result-row"><div class="muted">Gross Value at Target</div><div>$${fmt(grossSellAtTarget, 2)}</div></div>
+    <div class="result-row"><div class="muted">Total Fees (Buy+Sell)</div><div class="red">-$${fmt(buyFeeCost + sellFeeTarget, 2)}</div></div>
+    <div class="result-row"><div class="muted">Net Profit Goal</div><div class="green">$${fmt(netProfit, 2)}</div></div>`;
+    $('targetResult').innerHTML = html;
+}
+
+/* ===== SECTION 2: RUNNING P/L ===== */
+function computeRunning() {
+    const buyFee = buyFeeDecimal();
+    const sellFee = sellFeeDecimal();
+    const Pbuy = number($('runBuyPrice').value);
+    const A = number($('runInvestment').value);
+    const Pcurrent = number($('runCurrentPrice').value);
+
+    if (!isFinite(Pbuy) || !isFinite(A) || !isFinite(Pcurrent) || Pbuy <= 0) {
+        $('runningResult').innerHTML = `<div class="muted">Enter buy price, investment, and current price.</div>`;
+        return;
+    }
+
+    const units = computeUnitsBought(A, Pbuy, buyFee);
+    const breakEven = calculateBreakEven(Pbuy, buyFee, sellFee);
+    const grossIfSellNow = units * Pcurrent;
+    const netValueIfSellNow = grossIfSellNow * (1 - sellFee);
+    const profitLoss = netValueIfSellNow - A;
+    const roi = (profitLoss / A) * 100;
+    const plClass = profitLoss >= 0 ? 'green' : 'red';
+    const beClass = Pcurrent >= breakEven ? 'green' : 'red';
+
+    const html = `
+    <div class="result-row"><div class="muted">Units Held</div><div>${fmt(units, 6)}</div></div>
+    <div class="result-row"><div class="muted">Break-Even Price</div><div class="${beClass}">$${fmt(breakEven, 4)}</div></div>
+    <hr class="divider">
+    <div class="result-row"><div class="muted">Current Net Value</div><div class="${plClass}">$${fmt(netValueIfSellNow, 2)}</div></div>
+    <div class="result-row"><div class="muted">Unrealized P/L</div><div class="${plClass}">${profitLoss >= 0 ? '+' : ''}$${fmt(profitLoss, 2)} (${fmt(roi, 2)}%)</div></div>`;
+    $('runningResult').innerHTML = html;
+}
+
+function copyBreakEven() {
+    const buyFee = buyFeeDecimal();
+    const sellFee = sellFeeDecimal();
+    const Pbuy = number($('runBuyPrice').value);
+    if (!isFinite(Pbuy)) return showToast('Enter buy price first', 'error');
+    const be = calculateBreakEven(Pbuy, buyFee, sellFee);
+    navigator.clipboard?.writeText(be.toFixed(6));
+    showToast('Break-even price copied!', 'info');
+}
+
+/* ===== SECTION 3: PARTIAL SELL ===== */
+function computePartial() {
+    const buyFee = buyFeeDecimal();
+    const sellFee = sellFeeDecimal();
+    const Pbuy = number($('ps_buyPrice').value);
+    const A = number($('ps_buyAmount').value);
+    const sellUSD = number($('ps_sellAmount').value);
+    const sellPrice = number($('ps_sellPrice').value);
+    const marketPrice = number($('ps_marketPrice').value);
+
+    if (!isFinite(Pbuy) || !isFinite(A) || Pbuy <= 0) {
+        $('partialResult').innerHTML = `<div class="muted">Enter total buy info first.</div>`;
+        return;
+    }
+    const totalUnits = computeUnitsBought(A, Pbuy, buyFee);
+    $('ps_totalUnits').value = fmt(totalUnits, 6);
+
+    if (!isFinite(sellUSD) || !isFinite(sellPrice) || sellPrice <= 0) {
+        $('partialResult').innerHTML = `<div class="muted">Enter sell amount and price.</div>`;
+        return;
+    }
+
+    const unitsSold = sellUSD / sellPrice;
+    if (unitsSold > totalUnits + 1e-9) { // Add tolerance for float precision
+        $('partialResult').innerHTML = `<div class="red">Error: trying to sell ${fmt(unitsSold, 6)} units but you only hold ${fmt(totalUnits, 6)}.</div>`;
+        return;
+    }
+
+    const cashReceived = sellUSD * (1 - sellFee);
+    const cbPerUnit = costBasisPerUnit(A, totalUnits);
+    const costBasisSold = unitsSold * cbPerUnit;
+    const realizedPnL = cashReceived - costBasisSold;
+
+    const unitsRemaining = totalUnits - unitsSold;
+    const remainingCostBasis = A - costBasisSold;
+    
+    // New break-even for remaining units
+    const newBreakEven = unitsRemaining > 1e-9 ? remainingCostBasis / (unitsRemaining * (1 - sellFee)) : 0;
+    
+    const priceForRemaining = isFinite(marketPrice) ? marketPrice : sellPrice;
+    const remainingNetIfSell = (unitsRemaining * priceForRemaining) * (1 - sellFee);
+    const pnlClass = realizedPnL >= 0 ? 'green' : 'red';
+
+    const html = `
+    <div style="text-align:center; font-size:14px; margin-bottom:8px;"><strong>Sale Details</strong></div>
+    <div class="result-row"><div class="muted">Units Sold</div><div>${fmt(unitsSold, 6)}</div></div>
+    <div class="result-row"><div class="muted">Net Cash Received</div><div class="green">$${fmt(cashReceived, 2)}</div></div>
+    <div class="result-row"><div class="muted">Realized P/L (this sale)</div><div class="${pnlClass}">${realizedPnL >= 0 ? '+' : ''}$${fmt(realizedPnL, 2)}</div></div>
+    <hr class="divider">
+    <div style="text-align:center; font-size:14px; margin-bottom:8px;"><strong>Remaining Position</strong></div>
+    <div class="result-row"><div class="muted">Units Remaining</div><div>${fmt(unitsRemaining, 6)}</div></div>
+    <div class="result-row"><div class="muted">Remaining Cost Basis</div><div class="gold">$${fmt(remainingCostBasis, 2)}</div></div>
+    <div class="result-row"><div class="muted"><strong>New Break-Even Price</strong></div><div class="gold">$${fmt(newBreakEven, 4)}</div></div>
+    <div class="result-row"><div class="muted">Remaining Net Value (at market)</div><div>$${fmt(remainingNetIfSell, 2)}</div></div>
+    <hr class="divider">
+    <div class="result-row"><div class="muted"><strong>Total Position Value Now</strong></div><div class="green"><strong>$${fmt(cashReceived + remainingNetIfSell, 2)}</strong></div></div>
+    <div class="mini" style="margin-top:8px">Total Position = Net Cash Received + Net Value of Remaining Units</div>`;
+    $('partialResult').innerHTML = html;
+}
+
+/* ===== HELPERS TO CONNECT SECTIONS ===== */
+function computeAndFillTotalUnits() {
+    try {
+        // Sync Buy & Target -> Running P/L
+        $('runBuyPrice').value = $('buyPrice').value;
+        $('runInvestment').value = $('buyAmount').value;
+        // Sync Buy & Target -> Partial Sell
+        $('ps_buyPrice').value = $('buyPrice').value;
+        $('ps_buyAmount').value = $('buyAmount').value;
+
+        const buyFee = buyFeeDecimal();
+        const Pbuy = number($('ps_buyPrice').value);
+        const A = number($('ps_buyAmount').value);
+        if (!isFinite(Pbuy) || !isFinite(A) || Pbuy <= 0) return;
+        const units = computeUnitsBought(A, Pbuy, buyFee);
+        $('ps_totalUnits').value = fmt(units, 6);
+    } catch (e) {}
+}
+
+function autoFillPartial() {
+    computeAndFillTotalUnits();
+    showToast('Partial Sell inputs updated.', 'info');
+}
+
+/* ===== ONLOAD INITIALIZATION ===== */
+loadAll();
+runAllCalculations();
+</script>
+</body>
+</html>
